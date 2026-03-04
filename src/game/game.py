@@ -11,12 +11,17 @@ class Game:
         self.clock = pygame.time.Clock()
         self.running = True
 
+        self.objects = []
+
+    def add_object(self, obj):
+        self.objects.append(obj)
+
     def run(self):
         while self.running:
+            dt = self.clock.tick(FPS) / 1000.0  # delta time em segundos
             self.handle_events()
-            self.update()
+            self.update(dt)
             self.draw()
-            self.clock.tick(FPS)
 
         pygame.quit()
 
@@ -25,9 +30,14 @@ class Game:
             if event.type == pygame.QUIT:
                 self.running = False
 
-    def update(self):
-        pass
+    def update(self, dt):
+        for obj in self.objects:
+            if obj.active:
+                obj.update(dt)
 
     def draw(self):
         self.screen.fill((30, 30, 30))
+        for obj in self.objects:
+            if obj.active:
+                obj.draw(self.screen)
         pygame.display.flip()
