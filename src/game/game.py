@@ -30,6 +30,35 @@ class Game:
             if event.type == pygame.QUIT:
                 self.running = False
 
+            # tratar ESC para abrir/fechar o menu de pausa
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                menu = next((o for o in self.objects if getattr(o, "is_menu", False)), None)
+                if menu:
+                    if menu.active:
+                        # fechar menu e reativar objetos
+                        menu.active = False
+                        for o in self.objects:
+                            if o is not menu:
+                                o.active = True
+                    else:
+                        # abrir menu de pausa e desativar outros objetos
+                        menu.set_mode("pause")
+                        menu.active = True
+                        for o in self.objects:
+                            if o is not menu:
+                                o.active = False
+                    # não propagar ESC para handlers de objetos
+                    continue
+
+            # encaminhar evento para objetos que implementam handle_event
+            for obj in list(self.objects):
+                if hasattr(obj, "handle_event") and obj.active:
+                    try:
+                        obj.handle_event(event)
+                    except Exception:
+                        # não bloquear o loop por causa de um handler
+                        pass
+
     def update(self, dt):
         for obj in self.objects:
             if obj.active:
