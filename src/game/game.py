@@ -30,7 +30,7 @@ class Game:
             if event.type == pygame.QUIT:
                 self.running = False
 
-            # tratar ESC para abrir/fechar o menu de pausa
+            # lidar com ESC toggling do menu de pausa
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 menu = next((o for o in self.objects if getattr(o, "is_menu", False)), None)
                 if menu:
@@ -47,7 +47,7 @@ class Game:
                         for o in self.objects:
                             if o is not menu:
                                 o.active = False
-                    # não propagar ESC para handlers de objetos
+                    # não propagar ESC adiante
                     continue
 
             # encaminhar evento para objetos que implementam handle_event

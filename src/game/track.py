@@ -14,13 +14,22 @@ class Track(GameObject):
         self.border_color = (220, 220, 220)
         self.grass_color = (30, 120, 30)
         self.center_line_color = (240, 220, 80)
+        self.start_line_color = (255, 255, 255)
+
+        self.waypoints: list[Vector2] = [
+            Vector2(180.0, 140.0),
+            Vector2(620.0, 140.0),
+            Vector2(660.0, 220.0),
+            Vector2(660.0, 380.0),
+            Vector2(620.0, 460.0),
+            Vector2(180.0, 460.0),
+            Vector2(140.0, 380.0),
+            Vector2(140.0, 220.0),
+        ]
+
+        self.show_waypoints = False
 
     def is_on_road(self, position: Vector2) -> bool:
-        """
-        Retorna True se a posição estiver na pista:
-        - dentro do retângulo externo
-        - fora do retângulo interno
-        """
         point = (position.x, position.y)
         return self.outer_rect.collidepoint(point) and not self.inner_rect.collidepoint(point)
 
@@ -34,6 +43,10 @@ class Track(GameObject):
         pygame.draw.rect(screen, self.border_color, self.inner_rect, 4)
 
         self.draw_center_guides(screen)
+        self.draw_start_line(screen)
+
+        if self.show_waypoints:
+            self.draw_waypoints(screen)
 
     def draw_center_guides(self, screen):
         dash_w = 30
@@ -61,3 +74,10 @@ class Track(GameObject):
                     pygame.Rect(x, y_bottom, dash_w, dash_h)
                 )
             x += dash_w + gap
+
+    def draw_start_line(self, screen):
+        pygame.draw.rect(screen, self.start_line_color, pygame.Rect(170, 120, 12, 40))
+
+    def draw_waypoints(self, screen):
+        for point in self.waypoints:
+            pygame.draw.circle(screen, (255, 80, 80), (int(point.x), int(point.y)), 5)
