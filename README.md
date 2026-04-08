@@ -1,4 +1,4 @@
-Jogo de corrida 2D desenvolvido em Python utilizando Pygame para a matéria de Novas Aplicações em Engenharia de Software.
+Jogo de corrida 2D desenvolvido em Python utilizando Pygame para a matéria de Tópicos em Computação.
 
 ## Requisitos
 
