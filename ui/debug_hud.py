@@ -1,6 +1,6 @@
 import pygame
 from pygame.math import Vector2
-from game.game_object import GameObject
+from core.game_object import GameObject
 
 
 class DebugHUD(GameObject):

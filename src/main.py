@@ -1,14 +1,19 @@
 import sys
+from pathlib import Path
+
+# Add root directory to Python path so modules can be imported
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 from pygame.math import Vector2
 
-from game.game import Game
-from game.track import Track
-from game.player_car import PlayerCar
-from game.npc_car import NPCCar
-from game.debug_hud import DebugHUD
-from game.menu import Menu
-from game.race_manager import RaceManager
-from game.results_screen import ResultsScreen
+from core.game import Game
+from systems.track import Track
+from entities.player_car import PlayerCar
+from entities.npc_car import NPCCar
+from ui.debug_hud import DebugHUD
+from ui.menu import Menu
+from systems.race_manager import RaceManager
+from ui.results_screen import ResultsScreen
 
 TOTAL_LAPS = 3
 

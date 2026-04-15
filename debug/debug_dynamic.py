@@ -1,7 +1,7 @@
 """Classe de testes"""
 import pygame
 from pygame.math import Vector2
-from game.dynamic_object import DynamicObject
+from core.dynamic_object import DynamicObject
 
 
 class DebugDynamic(DynamicObject):

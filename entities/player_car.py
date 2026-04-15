@@ -1,6 +1,6 @@
 import pygame
 from pygame.math import Vector2
-from game.car import Car
+from entities.car import Car
 
 
 class PlayerCar(Car):
