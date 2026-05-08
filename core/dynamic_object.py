@@ -5,6 +5,7 @@ from core.game_object import GameObject
 
 
 class DynamicObject(GameObject):
+    """gerencia a fisica base do jogo"""
     def __init__(self, position: Vector2 | None = None):
         super().__init__(position)
         self.velocity: Vector2 = Vector2(0.0, 0.0)

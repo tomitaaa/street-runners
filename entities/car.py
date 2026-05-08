@@ -1,10 +1,23 @@
 import math
+import os
 import pygame
 from pygame.math import Vector2
 from core.dynamic_object import DynamicObject
 
 
+def _load_sprite(filename: str) -> pygame.Surface | None:
+    """Carrega um sprite PNG com suporte a transparência."""
+    assets_dir = os.path.join(os.path.dirname(__file__), "..", "assets", "images")
+    path = os.path.normpath(os.path.join(assets_dir, filename))
+    if os.path.exists(path):
+        return pygame.image.load(path).convert_alpha()
+    return None
+
+
 class Car(DynamicObject):
+    # Cache de sprites compartilhado entre instâncias (carrega 1x por processo)
+    _sprite_cache: dict[str, pygame.Surface] = {}
+
     def __init__(self, position: Vector2, track, name: str = "Car", waypoint_index: int = 0):
         super().__init__(position)
 
@@ -28,12 +41,34 @@ class Car(DynamicObject):
 
         self.linear_drag = self.on_road_drag
 
+        # Cor de fallback (triângulo) caso sprite não carregue
         self.color_on_road = (50, 200, 50)
         self.color_off_road = (200, 120, 50)
+
+        # Nome do arquivo de sprite (sobrescrito nas subclasses)
+        self.sprite_file: str = "player_car.png"
 
         self.current_waypoint_index: int = waypoint_index
         self.waypoint_radius: float = 35.0
         self.completed_laps: int = 0
+
+    # ──────────────────────────────────────────────────────────────
+    # Helpers de sprite
+    # ──────────────────────────────────────────────────────────────
+
+    def _get_sprite(self) -> pygame.Surface | None:
+        """Retorna sprite do cache (carrega na primeira chamada)."""
+        if self.sprite_file not in Car._sprite_cache:
+            surf = _load_sprite(self.sprite_file)
+            if surf is not None:
+                # Redimensiona para as dimensões exatas do carro
+                surf = pygame.transform.scale(surf, (int(self.width), int(self.height)))
+            Car._sprite_cache[self.sprite_file] = surf  # None se não achar
+        return Car._sprite_cache[self.sprite_file]
+
+    # ──────────────────────────────────────────────────────────────
+    # Lógica de movimento (inalterada)
+    # ──────────────────────────────────────────────────────────────
 
     def get_forward_vector(self) -> Vector2:
         angle_rad = math.radians(self.angle)
@@ -110,21 +145,36 @@ class Car(DynamicObject):
         if self.velocity.length() < 5.0:
             self.velocity.update(0.0, 0.0)
 
-    def draw(self, screen):
-        half_w = self.width / 2.0
-        half_h = self.height / 2.0
+    # ──────────────────────────────────────────────────────────────
+    # Desenho com sprite 8-bit (fallback para triângulo)
+    # ──────────────────────────────────────────────────────────────
 
-        local_points = [
-            Vector2(+half_w, 0.0),
-            Vector2(-half_w, -half_h),
-            Vector2(-half_w, +half_h),
-        ]
+    def draw(self, screen: pygame.Surface):
+        sprite = self._get_sprite()
 
-        world_points = []
-        for point in local_points:
-            rotated = point.rotate(self.angle)
-            world = self.position + rotated
-            world_points.append((int(world.x), int(world.y)))
+        if sprite is not None:
+            # Rotaciona o sprite ao redor do centro.
+            # pygame.transform.rotate gira no sentido anti-horário,
+            # mas nosso ângulo cresce no sentido horário → negamos.
+            rotated = pygame.transform.rotate(sprite, -self.angle)
+            rect = rotated.get_rect(center=(int(self.position.x), int(self.position.y)))
+            screen.blit(rotated, rect)
+        else:
+            # ── Fallback: triângulo original ──────────────────────
+            half_w = self.width / 2.0
+            half_h = self.height / 2.0
 
-        color = self.color_on_road if self.track.is_on_road(self.position) else self.color_off_road
-        pygame.draw.polygon(screen, color, world_points)
+            local_points = [
+                Vector2(+half_w, 0.0),
+                Vector2(-half_w, -half_h),
+                Vector2(-half_w, +half_h),
+            ]
+
+            world_points = []
+            for point in local_points:
+                rotated_pt = point.rotate(self.angle)
+                world = self.position + rotated_pt
+                world_points.append((int(world.x), int(world.y)))
+
+            color = self.color_on_road if self.track.is_on_road(self.position) else self.color_off_road
+            pygame.draw.polygon(screen, color, world_points)

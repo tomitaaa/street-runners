@@ -1,11 +1,29 @@
 import math
+import random
 from pygame.math import Vector2
 from entities.car import Car
 
 
+# Sprites disponíveis para os NPCs (escolhidos aleatoriamente ou por índice)
+_NPC_SPRITES = [
+    "npc_car_blue.png",
+    "npc_car_red.png",
+    "npc_car_orange.png",
+    "npc_car_purple.png",
+]
+
+
 class NPCCar(Car):
+    # Contador de instâncias para distribuir as cores em sequência
+    _instance_count: int = 0
+
     def __init__(self, position: Vector2, track, name: str = "NPC", waypoint_index: int = 0):
         super().__init__(position, track, name=name, waypoint_index=waypoint_index)
+
+        # Alterna sprites em sequência para variedade visual
+        idx = NPCCar._instance_count % len(_NPC_SPRITES)
+        self.sprite_file = _NPC_SPRITES[idx]
+        NPCCar._instance_count += 1
 
         self.color_on_road = (70, 140, 240)
         self.color_off_road = (180, 120, 60)
@@ -15,30 +33,17 @@ class NPCCar(Car):
         self.max_speed = 240.0
         self.steering_speed = 120.0
 
-        # usar look-ahead pequeno para não "pular" demais o caminho
         self.look_ahead_offset = 1
-
-        # raio maior ajuda a não ficar preso orbitando waypoint
         self.waypoint_radius = 55.0
 
     def get_steering_target(self) -> Vector2:
-        """
-        Alvo usado para direção.
-        Mantemos o waypoint atual para progressão,
-        mas podemos olhar um pouco à frente para suavizar.
-        """
         index = (self.current_waypoint_index + self.look_ahead_offset) % len(self.track.waypoints)
         return self.track.waypoints[index]
 
     def control(self, dt: float):
-        # waypoint atual = progresso real da pista
         current_waypoint = self.get_current_waypoint()
-
-        # alvo de direção = waypoint atual ou um pouco à frente
         steering_target = self.get_steering_target()
 
-        # se estiver muito longe do waypoint atual, prioriza ele
-        # isso evita orbitar para sempre sem avançar a volta
         if self.position.distance_to(current_waypoint) > 120.0:
             steering_target = current_waypoint
 
@@ -50,7 +55,6 @@ class NPCCar(Car):
         desired_angle = math.degrees(math.atan2(to_target.y, to_target.x))
         angle_diff = self.normalize_angle(desired_angle - self.angle)
 
-        # esterçamento proporcional, mais suave
         steer_strength = max(-1.0, min(1.0, angle_diff / 50.0))
         self.angle += steer_strength * self.steering_speed * dt
 
@@ -59,7 +63,6 @@ class NPCCar(Car):
         abs_diff = abs(angle_diff)
         speed = self.velocity.length()
 
-        # aceleração conforme curva
         if abs_diff < 20.0:
             throttle = 1.0
         elif abs_diff < 45.0:
@@ -71,6 +74,5 @@ class NPCCar(Car):
 
         self.apply_force(forward * (self.engine_force * throttle))
 
-        # freio leve em curva muito fechada e velocidade alta
         if abs_diff > 70.0 and speed > 120.0:
             self.apply_force(-forward * (self.brake_force * 0.35))

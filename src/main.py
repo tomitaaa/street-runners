@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 
-# Add root directory to Python path so modules can be imported
+# Adiciona o diretório raiz ao path para importações funcionarem
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from pygame.math import Vector2
@@ -14,25 +14,30 @@ from ui.debug_hud import DebugHUD
 from ui.menu import Menu
 from systems.race_manager import RaceManager
 from ui.results_screen import ResultsScreen
+from assets.sounds.sounds import SoundManager
 
 TOTAL_LAPS = 3
 
 
 def main() -> bool:
-    """Executa uma sessao completa do jogo. Retorna True se o jogador
-    escolheu 'Jogar Novamente', False se escolheu 'Sair'."""
-
+    """
+    Executa uma sessão completa do jogo.
+    Retorna True se o jogador escolheu 'Jogar Novamente', False se escolheu 'Sair'.
+    """
     game  = Game()
     track = Track()
+    sfx   = SoundManager(volume=0.6)
 
-    # Grade de largada: 2 colunas x 2 linhas, a direita da linha de largada
+    # ── Carros na grade de largada ──────────────────────────────────────────
     #   col A (x=210)   col B (x=248)
     #   [player] [NPC2]    <- linha 1 (y=128)
     #   [NPC 1]  [NPC3]    <- linha 2 (y=152)
-    player_car = PlayerCar(Vector2(210.0, 128.0), track, name="Python",   waypoint_index=1)
-    npc_car_1  = NPCCar(   Vector2(210.0, 152.0), track, name="NPC 1",    waypoint_index=1)
-    npc_car_2  = NPCCar(   Vector2(248.0, 128.0), track, name="NPC 2",    waypoint_index=1)
-    npc_car_3  = NPCCar(   Vector2(248.0, 152.0), track, name="NPC 3",    waypoint_index=1)
+    player_car = PlayerCar(Vector2(210.0, 128.0), track,
+                           name="Python", waypoint_index=1,
+                           sound_manager=sfx)
+    npc_car_1  = NPCCar(Vector2(210.0, 152.0), track, name="NPC 1", waypoint_index=1)
+    npc_car_2  = NPCCar(Vector2(248.0, 128.0), track, name="NPC 2", waypoint_index=1)
+    npc_car_3  = NPCCar(Vector2(248.0, 152.0), track, name="NPC 3", waypoint_index=1)
 
     for car in (player_car, npc_car_1, npc_car_2, npc_car_3):
         car.angle = 0.0
@@ -49,7 +54,6 @@ def main() -> bool:
 
     game_objects = [track, player_car, npc_car_1, npc_car_2, npc_car_3, hud]
 
-    # estado mutavel para capturar a escolha do jogador apos a corrida
     state = {'restart': False}
 
     def on_race_finish():
@@ -65,16 +69,22 @@ def main() -> bool:
         game.add_object(results)
 
     def _on_restart():
+        sfx.stop_all()
         state['restart'] = True
         game.running = False
 
-    race_manager = RaceManager(cars, total_laps=TOTAL_LAPS, on_finish=on_race_finish)
+    race_manager = RaceManager(
+        cars,
+        total_laps=TOTAL_LAPS,
+        on_finish=on_race_finish,
+        sound_manager=sfx,
+    )
 
     for o in game_objects:
         game.add_object(o)
     game.add_object(race_manager)
 
-    # iniciar desativados; o menu os ativa
+    # Inicia desativados; o menu os ativa
     for o in [*game_objects, race_manager]:
         o.active = False
 
@@ -88,10 +98,11 @@ def main() -> bool:
 
     game.run()
 
+    sfx.stop_all()
     return state['restart']
 
 
 if __name__ == '__main__':
     while main():
-        pass   # reinicia ate o jogador escolher Sair
+        pass   # reinicia até o jogador escolher Sair
     sys.exit(0)

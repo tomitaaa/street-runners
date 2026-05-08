@@ -1,7 +1,7 @@
 import pygame
 from config import SCREEN_WIDTH, SCREEN_HEIGHT, FPS, TITLE
 
-
+"""motor principal do jogo, armazena objetos, gerencia estados e o loop (update e render)."""
 class Game:
     def __init__(self):
         pygame.init()
